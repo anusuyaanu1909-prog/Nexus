@@ -53,6 +53,8 @@
     </div>
 
     <script>
+        const API_URL = window.location.origin; // automatically uses the current host
+
         // Add animation to form inputs
         document.querySelectorAll('.form-input').forEach(input => {
             input.addEventListener('focus', function() {
@@ -82,7 +84,8 @@
             }
 
             try {
-                const res = await fetch('/api/register', {
+                const res = await fetch(`${API_URL}/api/register`, { 
+
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
@@ -115,7 +118,8 @@
             }
 
             try {
-                const res = await fetch('/api/login', {
+                const res = await fetch(`${API_URL}/api/login`, { 
+
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ username, password })
