@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Login - Nexus Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Background Animation Elements -->
+    <div class="background-elements">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div style="display:flex; justify-content:center; align-items:center; min-height:100vh;">
+            <div class="card" style="width:100%; max-width:400px; margin:0 auto;">
+                <div style="text-align:center; margin-bottom:2rem;">
+                    <h1 style="background:var(--gradient-accent); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:0.5rem;">
+                        <i class="fas fa-comments"></i> Nexus Chat
+                    </h1>
+                    <p style="color:var(--text-secondary);">Connect with people around the world</p>
+                </div>
+
+                <div class="form-group">
+                    <input type="text" id="username" class="form-input" placeholder="Username" autocomplete="username">
+                </div>
+
+                <div class="form-group">
+                    <input type="password" id="password" class="form-input" placeholder="Password" autocomplete="current-password">
+                </div>
+
+                <div class="form-group" style="display:flex; gap:1rem;">
+                    <button class="btn" onclick="login()" style="flex:1;">
+                        <i class="fas fa-sign-in-alt"></i> Login
+                    </button>
+                    <button class="btn btn-accent" onclick="register()" style="flex:1;">
+                        <i class="fas fa-user-plus"></i> Register
+                    </button>
+                </div>
+
+                <p id="message" style="text-align:center; padding:1rem; border-radius:var(--border-radius-sm);"></p>
+
+                <div style="text-align:center; margin-top:2rem; padding-top:2rem; border-top:1px solid rgba(255,255,255,0.1);">
+                    <p style="color:var(--text-secondary); font-size:0.9rem;">
+                        <i class="fas fa-shield-alt"></i> Your privacy is protected
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add animation to form inputs
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('focus', function() {
+                this.parentElement.style.transform = 'translateY(-2px)';
+            });
+            
+            input.addEventListener('blur', function() {
+                this.parentElement.style.transform = 'translateY(0)';
+            });
+        });
+
+        // Enter key support
+        document.getElementById('password').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                login();
+            }
+        });
+
+        async function register() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('message');
+            
+            if (!username || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                
+                if (data.token) {
+                    showMessage('Registration successful! Redirecting...', 'success');
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    setTimeout(() => {
+                        window.location.href = 'chat.html';
+                    }, 1000);
+                } else {
+                    showMessage(data.error || 'Registration failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            }
+        }
+
+        async function login() {
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageEl = document.getElementById('message');
+            
+            if (!username || !password) {
+                showMessage('Please fill in all fields', 'error');
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+                const data = await res.json();
+                
+                if (data.token) {
+                    showMessage('Login successful! Redirecting...', 'success');
+                    localStorage.setItem('token', data.token);
+                    localStorage.setItem('username', data.username);
+                    setTimeout(() => {
+                        window.location.href = 'chat.html';
+                    }, 1000);
+                } else {
+                    showMessage(data.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                showMessage('Network error. Please try again.', 'error');
+            }
+        }
+
+        function showMessage(text, type) {
+            const messageEl = document.getElementById('message');
+            messageEl.textContent = text;
+            messageEl.style.color = type === 'error' ? 'var(--error)' : 'var(--success)';
+            messageEl.style.background = type === 'error' ? 'rgba(239, 68, 68, 0.1)' : 'rgba(16, 185, 129, 0.1)';
+            
+            // Add animation
+            messageEl.style.animation = 'none';
+            setTimeout(() => {
+                messageEl.style.animation = 'slideInUp 0.4s var(--animation-smooth)';
+            }, 10);
+        }
+    </script>
+</body>
+</html>

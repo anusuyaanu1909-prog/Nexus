@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <!-- Background Animation Elements -->
+    <div class="background-elements">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div>
+                <h2>Welcome to <span style="background:var(--gradient-accent); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Nexus Chat</span></h2>
+                <p>Connected as <span id="myUsername" style="font-weight:600;"></span></p>
+            </div>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <button class="btn btn-secondary" onclick="openSettings()">
+                    <i class="fas fa-cog"></i> Settings
+                </button>
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Chat Container -->
+        <div class="chat-container">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="sidebar-tabs">
+                        <button class="tab-btn active" onclick="switchTab('online')">
+                            <i class="fas fa-users"></i> Online
+                        </button>
+                        <button class="tab-btn" onclick="switchTab('archived')">
+                            <i class="fas fa-archive"></i> Archived
+                        </button>
+                    </div>
+                    <button class="theme-toggle" onclick="toggleTheme()">
+                        <i class="fas fa-palette"></i>
+                    </button>
+                </div>
+
+                <!-- Online Users -->
+                <div id="online-tab" class="tab-content">
+                    <h4 style="margin-bottom:1rem; color:var(--text-secondary);">
+                        <i class="fas fa-circle" style="color:var(--success); font-size:0.8rem;"></i>
+                        Online Users
+                    </h4>
+                    <div id="users" class="users-list"></div>
+                </div>
+
+                <!-- Archived Chats -->
+                <div id="archived-tab" class="tab-content" style="display:none;">
+                    <h4 style="margin-bottom:1rem; color:var(--text-secondary);">
+                        <i class="fas fa-archive"></i>
+                        Archived Chats
+                    </h4>
+                    <div id="archived-users" class="users-list"></div>
+                </div>
+            </div>
+
+            <!-- Chat Area -->
+            <div class="chat-area">
+                <div class="chat-header">
+                    <div>
+                        <h3 id="chatWith">Select a user to start chatting</h3>
+                        <p id="userStatus" style="font-size:0.9rem; opacity:0.8;"></p>
+                    </div>
+                    <div id="chatActions" style="display:none;">
+                        <button class="btn btn-secondary" onclick="archiveCurrentChat()" id="archiveBtn">
+                            <i class="fas fa-archive"></i> Archive
+                        </button>
+                    </div>
+                </div>
+
+                <div id="messages" class="chat-messages">
+                    <div style="text-align:center; color:var(--text-secondary); margin-top:2rem;">
+                        <i class="fas fa-comments" style="font-size:3rem; margin-bottom:1rem; opacity:0.5;"></i>
+                        <p>Select a user from the sidebar to start chatting</p>
+                    </div>
+                </div>
+
+                <div class="message-input-container" id="messageInputContainer" style="display:none;">
+                    <input type="text" id="msgInput" class="message-input" placeholder="Type your message...">
+                    <button class="send-btn" onclick="sendMessage()">
+                        <i class="fas fa-paper-plane"></i> Send
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Settings Modal -->
+    <div id="settingsModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-cog"></i> Settings</h3>
+                <button class="close-btn" onclick="closeSettings()">&times;</button>
+            </div>
+            
+            <div class="settings-section">
+                <h3>Appearance</h3>
+                <div class="setting-item">
+                    <span>Dark Theme</span>
+                    <label class="switch">
+                        <input type="checkbox" id="darkTheme" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span>Animations</span>
+                    <label class="switch">
+                        <input type="checkbox" id="animations" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Notifications</h3>
+                <div class="setting-item">
+                    <span>Message Sounds</span>
+                    <label class="switch">
+                        <input type="checkbox" id="messageSounds" checked>
+                        <span class="slider"></span>
+                    </label>
+                </div>
+                <div class="setting-item">
+                    <span>Desktop Notifications</span>
+                    <label class="switch">
+                        <input type="checkbox" id="desktopNotifications">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3>Account</h3>
+                <div class="form-group">
+                    <label>Username</label>
+                    <input type="text" id="settingsUsername" class="form-input" readonly>
+                </div>
+                <button class="btn btn-secondary" style="width:100%;">
+                    <i class="fas fa-key"></i> Change Password
+                </button>
+            </div>
+
+            <div style="display:flex; gap:1rem; margin-top:2rem;">
+                <button class="btn" style="flex:1;" onclick="saveSettings()">
+                    <i class="fas fa-save"></i> Save
+                </button>
+                <button class="btn btn-secondary" style="flex:1;" onclick="closeSettings()">
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Authentication check
+        const username = localStorage.getItem('username');
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        document.getElementById('myUsername').innerText = username;
+        document.getElementById('settingsUsername').value = username;
+
+        // Socket connection
+        const socket = io({ auth: { token } });
+        let currentChatUser = null;
+        let archivedChats = JSON.parse(localStorage.getItem('archivedChats') || '[]');
+
+        // Tab switching
+        function switchTab(tab) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.style.display = 'none');
+            
+            event.target.classList.add('active');
+            document.getElementById(tab + '-tab').style.display = 'block';
+            
+            if (tab === 'archived') {
+                loadArchivedChats();
+            }
+        }
+
+        // Load archived chats
+        function loadArchivedChats() {
+            const archivedList = document.getElementById('archived-users');
+            archivedList.innerHTML = '';
+            
+            archivedChats.forEach(user => {
+                const div = document.createElement('div');
+                div.className = 'archive-item';
+                div.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <span>${user}</span>
+                        <button class="btn btn-secondary" onclick="unarchiveChat('${user}')" style="padding:5px 10px; font-size:0.8rem;">
+                            <i class="fas fa-inbox"></i>
+                        </button>
+                    </div>
+                `;
+                archivedList.appendChild(div);
+            });
+        }
+
+        // Archive chat
+function archiveCurrentChat() {
+    if (!currentChatUser) return;
+    const index = archivedChats.indexOf(currentChatUser);
+    if (index === -1) {
+        archivedChats.push(currentChatUser);
+        showNotification(`Chat with ${currentChatUser} archived`);
+    } else {
+        archivedChats.splice(index, 1);
+        showNotification(`Chat with ${currentChatUser} unarchived`);
+    }
+    localStorage.setItem('archivedChats', JSON.stringify(archivedChats));
+    loadArchivedChats();
+    selectUser(currentChatUser); // refresh button state
+}
+
+
+        function unarchiveChat(user) {
+            archivedChats = archivedChats.filter(u => u !== user);
+            localStorage.setItem('archivedChats', JSON.stringify(archivedChats));
+            loadArchivedChats();
+            showNotification('Chat unarchived');
+        }
+
+        // Settings
+        function openSettings() {
+            document.getElementById('settingsModal').style.display = 'block';
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').style.display = 'none';
+        }
+
+        function saveSettings() {
+            // Save settings to localStorage
+            const settings = {
+                darkTheme: document.getElementById('darkTheme').checked,
+                animations: document.getElementById('animations').checked,
+                messageSounds: document.getElementById('messageSounds').checked,
+                desktopNotifications: document.getElementById('desktopNotifications').checked
+            };
+            localStorage.setItem('chatSettings', JSON.stringify(settings));
+            showNotification('Settings saved successfully');
+            closeSettings();
+        }
+
+        function toggleTheme() {
+            // Theme toggle functionality
+            document.body.classList.toggle('light-theme');
+        }
+
+        // Notification
+        function showNotification(message) {
+            // Create and show notification
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: var(--gradient-primary);
+                color: white;
+                padding: 1rem 1.5rem;
+                border-radius: var(--border-radius-sm);
+                box-shadow: var(--shadow-lg);
+                z-index: 1001;
+                animation: slideInUp 0.3s var(--animation-smooth);
+            `;
+            notification.textContent = message;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+
+        // Existing chat functionality
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+
+        // Online users
+        socket.on('onlineUsers', (users) => {
+    const uniqueUsers = [...new Set(users)]; // remove duplicates
+    const usersList = document.getElementById('users');
+    usersList.innerHTML = '';
+
+    uniqueUsers.filter(u => u !== username).forEach(u => {
+        const userItem = document.createElement('div');
+        userItem.className = 'user-item';
+        if (u === currentChatUser) userItem.classList.add('active');
+        
+        userItem.innerHTML = `
+            <span class="user-status"></span>
+            ${u}
+            ${archivedChats.includes(u) ? '<i class="fas fa-archive" style="float:right; opacity:0.5;"></i>' : ''}
+        `;
+        
+        userItem.onclick = () => selectUser(u);
+        usersList.appendChild(userItem);
+    });
+});
+
+   function selectUser(user) {
+    currentChatUser = user;
+    document.getElementById('chatWith').innerText = user;
+    document.getElementById('messages').innerHTML = '';
+    document.getElementById('messageInputContainer').style.display = 'flex';
+    document.getElementById('chatActions').style.display = 'block';
+
+    // Update archive button text
+    const archiveBtn = document.getElementById('archiveBtn');
+    if (archivedChats.includes(user)) {
+        archiveBtn.innerHTML = '<i class="fas fa-inbox"></i> Unarchive';
+    } else {
+        archiveBtn.innerHTML = '<i class="fas fa-archive"></i> Archive';
+    }
+
+    // Highlight active user
+    document.querySelectorAll('.user-item').forEach(item => item.classList.remove('active'));
+    const item = Array.from(document.querySelectorAll('.user-item'))
+                      .find(i => i.textContent.includes(user));
+    if (item) item.classList.add('active');
+
+    // Load chat history
+    socket.emit('get history', { withUser: user });
+}
+
+
+socket.on('history', (msgs) => {
+    const messagesDiv = document.getElementById('messages');
+
+    // Store existing messages temporarily
+    const existingMsgs = Array.from(messagesDiv.children).map(div => div.innerHTML);
+
+    messagesDiv.innerHTML = '';
+
+    if (msgs.length === 0) {
+        messagesDiv.innerHTML = `
+            <div style="text-align:center; color:var(--text-secondary); margin-top:2rem;">
+                <i class="fas fa-comment-slash" style="font-size:3rem; margin-bottom:1rem; opacity:0.5;"></i>
+                <p>No messages yet. Start the conversation!</p>
+            </div>
+        `;
+    } else {
+        msgs.forEach(m => addMessage(m.from, m.msg));
+    }
+
+    // Append temporarily stored messages that were sent before history arrived
+    existingMsgs.forEach(html => {
+        const div = document.createElement('div');
+        div.innerHTML = html;
+        messagesDiv.appendChild(div);
+    });
+
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+});
+
+
+
+socket.on('private message', ({ from, msg }) => {
+    // If message is from the user we are chatting with OR from self
+    if (from === currentChatUser || from === username) {
+        addMessage(from, msg);  // Correct alignment handled in addMessage()
+    } else {
+        // Optional: show notification if message from someone else
+        showNotification(`New message from ${from}`);
+    }
+});
+
+
+
+        function addMessage(from, msg) {
+    const messagesDiv = document.getElementById('messages');
+    const messageDiv = document.createElement('div');
+
+    if (from === username) {
+        messageDiv.className = 'message self';
+    } else {
+        messageDiv.className = 'message other';
+    }
+
+    const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    messageDiv.innerHTML = `
+        ${from !== username ? `<span class="message-sender">${from}</span>` : ''}
+        <div class="message-text">${msg}</div>
+        <span class="message-time">${time}</span>
+    `;
+
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+}
+        function sendMessage() {
+            const input = document.getElementById('msgInput');
+            const msg = input.value.trim();
+            
+            if (!msg || !currentChatUser) return;
+            
+            socket.emit('private message', { to: currentChatUser, msg });
+            input.value = '';
+        }
+
+        // Enter key to send message
+        document.getElementById('msgInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Load settings
+        window.addEventListener('load', () => {
+            const savedSettings = JSON.parse(localStorage.getItem('chatSettings') || '{}');
+            if (savedSettings.darkTheme !== undefined) {
+                document.getElementById('darkTheme').checked = savedSettings.darkTheme;
+            }
+            if (savedSettings.animations !== undefined) {
+                document.getElementById('animations').checked = savedSettings.animations;
+            }
+            if (savedSettings.messageSounds !== undefined) {
+                document.getElementById('messageSounds').checked = savedSettings.messageSounds;
+            }
+            if (savedSettings.desktopNotifications !== undefined) {
+                document.getElementById('desktopNotifications').checked = savedSettings.desktopNotifications;
+            }
+        });
+    </script>
+</body>
+</html>

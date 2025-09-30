@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nexus Chat - Modern Messaging</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Background Animation Elements -->
+    <div class="background-elements">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="card" style="text-align:center; max-width:600px; margin:5rem auto;">
+            <div style="margin-bottom:2rem;">
+                <h1 style="background:var(--gradient-accent); -webkit-background-clip:text; -webkit-text-fill-color:transparent; font-size:3rem; margin-bottom:1rem;">
+                    <i class="fas fa-comments"></i> Nexus Chat
+                </h1>
+                <p style="color:var(--text-secondary); font-size:1.2rem;">
+                    Experience the future of messaging
+                </p>
+            </div>
+
+            <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(200px, 1fr)); gap:2rem; margin:3rem 0;">
+                <div class="feature-card" style="padding:1.5rem; background:rgba(255,255,255,0.05); border-radius:var(--border-radius);">
+                    <i class="fas fa-bolt" style="font-size:2rem; background:var(--gradient-primary); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:1rem;"></i>
+                    <h3>Lightning Fast</h3>
+                    <p style="color:var(--text-secondary);">Real-time messaging with no delays</p>
+                </div>
+                <div class="feature-card" style="padding:1.5rem; background:rgba(255,255,255,0.05); border-radius:var(--border-radius);">
+                    <i class="fas fa-shield-alt" style="font-size:2rem; background:var(--gradient-accent); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:1rem;"></i>
+                    <h3>Secure</h3>
+                    <p style="color:var(--text-secondary);">Your conversations are protected</p>
+                </div>
+                <div class="feature-card" style="padding:1.5rem; background:rgba(255,255,255,0.05); border-radius:var(--border-radius);">
+                    <i class="fas fa-palette" style="font-size:2rem; background:var(--gradient-primary); -webkit-background-clip:text; -webkit-text-fill-color:transparent; margin-bottom:1rem;"></i>
+                    <h3>Beautiful</h3>
+                    <p style="color:var(--text-secondary);">Stunning design and animations</p>
+                </div>
+            </div>
+
+            <div style="margin:3rem 0;">
+                <a href="login.html" class="btn" style="font-size:1.2rem; padding:15px 30px;">
+                    <i class="fas fa-rocket"></i> Get Started
+                </a>
+            </div>
+
+            <div style="border-top:1px solid rgba(255,255,255,0.1); padding-top:2rem; margin-top:2rem;">
+                <p style="color:var(--text-secondary);">
+                    Join thousands of users already connected on Nexus Chat
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Add hover animations to feature cards
+        document.querySelectorAll('.feature-card').forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.style.transform = 'translateY(-10px)';
+                this.style.transition = 'all 0.3s var(--animation-smooth)';
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.style.transform = 'translateY(0)';
+            });
+        });
+    </script>
+</body>
+</html>
