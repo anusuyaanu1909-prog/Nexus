@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Panel - Nexus Chat</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="/socket.io/socket.io.js"></script>
+</head>
+<body>
+    <div class="background-elements">
+        <div class="floating-shape shape-1"></div>
+        <div class="floating-shape shape-2"></div>
+        <div class="floating-shape shape-3"></div>
+    </div>
+
+    <div class="container">
+        <div class="header">
+            <div>
+                <h2><i class="fas fa-shield-alt"></i> Nexus Chat <span style="background:var(--gradient-accent); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">Admin Panel</span></h2>
+                <p>Monitoring system activity</p>
+            </div>
+            <div style="display:flex; gap:1rem; align-items:center;">
+                <button class="btn btn-secondary" onclick="goToChat()">
+                    <i class="fas fa-comments"></i> Go to Chat
+                </button>
+                <button class="btn btn-logout" onclick="logout()">
+                    <i class="fas fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </div>
+
+        <div class="admin-container">
+            <!-- Statistics Cards -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--gradient-primary);">
+                        <i class="fas fa-users"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalUsers">0</h3>
+                        <p>Total Users</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--gradient-accent);">
+                        <i class="fas fa-comments"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="totalMessages">0</h3>
+                        <p>Total Messages</p>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:var(--success);">
+                        <i class="fas fa-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <h3 id="onlineUsers">0</h3>
+                        <p>Online Now</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Tabs -->
+            <div class="admin-tabs">
+                <button class="admin-tab active" onclick="openAdminTab('users')">
+                    <i class="fas fa-users"></i> Users
+                </button>
+                <button class="admin-tab" onclick="openAdminTab('messages')">
+                    <i class="fas fa-comments"></i> Messages
+                </button>
+                <button class="admin-tab" onclick="openAdminTab('monitor')">
+                    <i class="fas fa-eye"></i> Live Monitor
+                </button>
+            </div>
+
+            <!-- Users Tab -->
+            <div id="users-tab" class="admin-tab-content active">
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Status</th>
+                                <th>Last Seen</th>
+                                <th>Profile</th>
+                                <th>Admin</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersTable">
+                            <!-- Users will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Messages Tab -->
+            <div id="messages-tab" class="admin-tab-content">
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Message</th>
+                                <th>Time</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="messagesTable">
+                            <!-- Messages will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Live Monitor Tab -->
+            <div id="monitor-tab" class="admin-tab-content">
+                <div class="monitor-container">
+                    <div class="monitor-section">
+                        <h3><i class="fas fa-broadcast-tower"></i> Real-time Activity</h3>
+                        <div id="liveActivity" class="activity-feed">
+                            <!-- Live activities will appear here -->
+                        </div>
+                    </div>
+                    <div class="monitor-section">
+                        <h3><i class="fas fa-chart-line"></i> System Metrics</h3>
+                        <div class="metrics-grid">
+                            <div class="metric-item">
+                                <span>Active Connections</span>
+                                <strong id="activeConnections">0</strong>
+                            </div>
+                            <div class="metric-item">
+                                <span>Messages/Minute</span>
+                                <strong id="messagesPerMinute">0</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const username = localStorage.getItem('username');
+        const token = localStorage.getItem('token');
+        
+        if (!token) {
+            window.location.href = 'login.html';
+        }
+
+        // Verify admin access
+        fetch('/api/admin/users', {
+            headers: { 'Authorization': 'Bearer ' + token }
+        }).then(res => {
+            if (!res.ok) {
+                window.location.href = 'chat.html';
+            }
+        });
+
+        const socket = io({ auth: { token } });
+        let messageCount = 0;
+        let messageTimer = null;
+
+        // Load initial data
+        loadUsers();
+        loadMessages();
+        updateStats();
+
+        // Socket events
+        socket.on('onlineUsers', (users) => {
+            document.getElementById('onlineUsers').textContent = users.length;
+            document.getElementById('activeConnections').textContent = users.length;
+        });
+
+        socket.on('newMessage', (message) => {
+            messageCount++;
+            document.getElementById('totalMessages').textContent = 
+                parseInt(document.getElementById('totalMessages').textContent) + 1;
+            
+            addLiveActivity(`New message from ${message.from} to ${message.to}`);
+        });
+
+        socket.on('private message', (message) => {
+            messageCount++;
+            updateMessagesPerMinute();
+        });
+
+        function updateMessagesPerMinute() {
+            clearTimeout(messageTimer);
+            document.getElementById('messagesPerMinute').textContent = messageCount;
+            messageTimer = setTimeout(() => {
+                messageCount = 0;
+                document.getElementById('messagesPerMinute').textContent = '0';
+            }, 60000);
+        }
+
+        function addLiveActivity(text) {
+            const activityFeed = document.getElementById('liveActivity');
+            const activityItem = document.createElement('div');
+            activityItem.className = 'activity-item';
+            activityItem.innerHTML = `
+                <span class="activity-time">${new Date().toLocaleTimeString()}</span>
+                <span class="activity-text">${text}</span>
+            `;
+            activityFeed.insertBefore(activityItem, activityFeed.firstChild);
+            
+            if (activityFeed.children.length > 50) {
+                activityFeed.removeChild(activityFeed.lastChild);
+            }
+        }
+
+        function openAdminTab(tabName) {
+            // Hide all tab contents
+            document.querySelectorAll('.admin-tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Remove active class from all tabs
+            document.querySelectorAll('.admin-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            
+            // Show the selected tab
+            document.getElementById(tabName + '-tab').classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        async function loadUsers() {
+            try {
+                const res = await fetch('/api/admin/users', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const users = await res.json();
+                
+                const tbody = document.getElementById('usersTable');
+                tbody.innerHTML = '';
+                
+                users.forEach(user => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${user.username}</td>
+                        <td>
+                            <span class="status-badge ${user.is_online ? 'online' : 'offline'}">
+                                ${user.is_online ? 'Online' : 'Offline'}
+                            </span>
+                        </td>
+                        <td>${new Date(user.last_seen).toLocaleString()}</td>
+                        <td>
+                            ${user.profile_picture ? 
+                                `<img src="${user.profile_picture}" class="profile-thumb" alt="Profile">` : 
+                                '<i class="fas fa-user"></i>'
+                            }
+                        </td>
+                        <td>${user.is_admin ? '<i class="fas fa-check success"></i>' : ''}</td>
+                        <td>
+                            <button class="btn btn-sm" onclick="viewUserMessages('${user.username}')">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                document.getElementById('totalUsers').textContent = users.length;
+            } catch (error) {
+                console.error('Error loading users:', error);
+            }
+        }
+
+        async function loadMessages() {
+            try {
+                const res = await fetch('/api/admin/messages?limit=50', {
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                const messages = await res.json();
+                
+                const tbody = document.getElementById('messagesTable');
+                tbody.innerHTML = '';
+                
+                messages.forEach(msg => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${msg.sender}</td>
+                        <td>${msg.receiver}</td>
+                        <td>${msg.msg}</td>
+                        <td>${new Date(msg.timestamp).toLocaleString()}</td>
+                        <td>${msg.msg_type}</td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="deleteMessage(${msg.id})">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+                
+                document.getElementById('totalMessages').textContent = messages.length;
+            } catch (error) {
+                console.error('Error loading messages:', error);
+            }
+        }
+
+        async function deleteMessage(messageId) {
+            if (!confirm('Are you sure you want to delete this message?')) return;
+            
+            try {
+                const res = await fetch(`/api/admin/messages/${messageId}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': 'Bearer ' + token }
+                });
+                
+                if (res.ok) {
+                    loadMessages();
+                    addLiveActivity(`Message ${messageId} deleted by admin`);
+                }
+            } catch (error) {
+                console.error('Error deleting message:', error);
+            }
+        }
+
+        function viewUserMessages(username) {
+            alert(`Viewing messages for: ${username}\nThis would open a detailed view in a real implementation.`);
+        }
+
+        function updateStats() {
+            // Update statistics periodically
+            setInterval(() => {
+                loadUsers();
+            }, 30000);
+        }
+
+        function goToChat() {
+            window.location.href = 'chat.html';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            window.location.href = 'login.html';
+        }
+
+        // Initial live activity
+        addLiveActivity('Admin panel initialized');
+        addLiveActivity(`Logged in as ${username}`);
+    </script>
+</body>
+</html>
