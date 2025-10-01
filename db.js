@@ -9,11 +9,14 @@ const db = new sqlite3.Database(dbPath, (err) => {
     else console.log('SQLite DB connected at', dbPath);
 });
 // Users table
+
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
-    password TEXT
+    password TEXT,
+    is_admin INTEGER DEFAULT 0
 )`);
+
 
 // Messages table
 db.run(`CREATE TABLE IF NOT EXISTS messages (
