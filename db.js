@@ -18,7 +18,8 @@ db.run(`CREATE TABLE IF NOT EXISTS users (
     username TEXT UNIQUE,
     password TEXT,
     is_admin INTEGER DEFAULT 0,
-    is_online INTEGER DEFAULT 0
+    is_online INTEGER DEFAULT 0,
+    last_seen DATETIME DEFAULT CURRENT_TIMESTAMP
 )`);
 
 // Messages table
