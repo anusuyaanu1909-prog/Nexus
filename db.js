@@ -1,22 +1,25 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
 
-// Use Render's /tmp folder for the database
+// Use Render's /tmp folder for the database (ephemeral storage)
 const dbPath = path.join('/tmp', 'chat.db');
 
 const db = new sqlite3.Database(dbPath, (err) => {
-    if (err) console.error('DB Error:', err);
-    else console.log('SQLite DB connected at', dbPath);
+    if (err) {
+        console.error('DB Error:', err);
+    } else {
+        console.log('SQLite DB connected at', dbPath);
+    }
 });
-// Users table
 
+// Users table
 db.run(`CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     username TEXT UNIQUE,
     password TEXT,
-    is_admin INTEGER DEFAULT 0
+    is_admin INTEGER DEFAULT 0,
+    is_online INTEGER DEFAULT 0
 )`);
-
 
 // Messages table
 db.run(`CREATE TABLE IF NOT EXISTS messages (
